@@ -17,23 +17,37 @@
 package sirius.seoulapp;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.Serializable;
@@ -49,27 +63,44 @@ public class MapsFragment extends Fragment
         implements OnMapReadyCallback, OnMyLocationButtonClickListener, ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnCameraMoveStartedListener,
         GoogleMap.OnCameraMoveListener,
         GoogleMap.OnCameraMoveCanceledListener,
-        GoogleMap.OnCameraIdleListener, Serializable {
+        GoogleMap.OnCameraIdleListener, Serializable, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private final String TAG = getClass().getName();
     private MapView mapView;
     private GoogleMap googleMap;
     private ArrayList<Row> rowList;
     private ArrayList<LatLng> latlngs;
+    private LatLng nowPosition;
+    private GoogleApiClient mGoogleApiClient;
+    private LocationRequest mLocationRequest;
+    private Button addBtn;
 
-    private void setLatLngs(){
+    private void setLatLngs() {
         Log.d(TAG, "setLatLngs");
-        for(int i=0; i<rowList.size(); i++){
+        latlngs = new ArrayList<LatLng>();
+        for (int i = 0; i < rowList.size(); i++) {
             Row row = rowList.get(i);
-            latlngs.add(new LatLng(new Double(row.getWGS84_X()), new Double(row.getWGS84_Y())));
+            LatLng latlng = new LatLng(Double.valueOf(row.getWGS84_Y()), Double.valueOf(row.getWGS84_X()));
+            latlngs.add(latlng);
         }
     }
 
-    private void setMarker(){
+    private void setMarkerforSeouldata() {
         Log.d(TAG, "setMarker");
-        for(int i=0; i<latlngs.size(); i++){
-            googleMap.addMarker(new MarkerOptions().position(latlngs.get(i)).title(rowList.get(i).getNM_DP()));
+        MarkerOptions marker = new MarkerOptions();
+        for (int i = 0; i < latlngs.size(); i++) {
+            marker.position(latlngs.get(i));
+            marker.title(rowList.get(i).getNAME_KOR());
+            googleMap.addMarker(marker);
         }
+    }
+
+    private void setMarker(LatLng tempLatLng, String title, String snippet){
+        MarkerOptions marker = new MarkerOptions();
+        marker.position(tempLatLng);
+        marker.title(title);
+        marker.snippet(snippet);
+        googleMap.addMarker(marker);
     }
 
     @Nullable
@@ -77,23 +108,65 @@ public class MapsFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView");
         View v = inflater.inflate(R.layout.maps_fragment, container, false);
+        final LinearLayout linear = (LinearLayout)View.inflate(getContext(), R.layout.markeradd, null);
+        final EditText editTitle = (EditText)linear.findViewById(R.id.title);
+        final EditText editSnippet = (EditText)linear.findViewById(R.id.snippet);
+        AlertDialog.Builder alert = new AlertDialog.Builder(getContext())
+                .setTitle("Marker 추가하기")
+                .setIcon(R.drawable.ic_place_black_24dp)
+                .setView(linear)
+                .setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        String title = editTitle.getText().toString();
+                        String snippet = editSnippet.getText().toString();
+                        if(TextUtils.isEmpty(title) || TextUtils.isEmpty(snippet)){
+                            Toast.makeText(getContext(), "Cannot be Empty!",Toast.LENGTH_LONG).show();
+                            editTitle.setText("");
+                            editSnippet.setText("");
+                            dialogInterface.dismiss();
+                            return;
+                        }
+                        setMarker(nowPosition, editTitle.getText().toString(), editSnippet.getText().toString());
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        editTitle.setText("");
+                        editSnippet.setText("");
+                        dialogInterface.dismiss();
+                    }
+                });
+        final AlertDialog alertDialog = alert.create();
+        addBtn = (Button)v.findViewById(R.id.addbtn);
+        addBtn.setOnClickListener(new Button.OnClickListener(){
+            @Override
+            public void onClick(View view) {
+                alertDialog.show();
+            }
+        });
+
+        Bundle bundle = getArguments();
+        rowList = (ArrayList<Row>) bundle.getSerializable("rowList");
+
+        mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
         return v;
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onViewCreated");
-
         super.onViewCreated(view, savedInstanceState);
         mapView = (MapView) view.findViewById(R.id.map);
         mapView.onCreate(savedInstanceState);
         mapView.onResume();
         mapView.getMapAsync(this);
-
-        Bundle bundle = getArguments();
-        rowList = (ArrayList<Row>) bundle.getSerializable("rowList");
-
-        setLatLngs();
     }
 
     @Override
@@ -105,7 +178,22 @@ public class MapsFragment extends Fragment
         googleMap.setOnCameraMoveStartedListener(this);
         googleMap.setOnCameraMoveListener(this);
         googleMap.setOnCameraMoveCanceledListener(this);
-        setMarker();
+        googleMap.getUiSettings().setRotateGesturesEnabled(false);
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
+        googleMap.setMinZoomPreference(5);
+        googleMap.setMaxZoomPreference(15);
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener(){
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                if(marker.isInfoWindowShown())
+                    marker.hideInfoWindow();
+                else marker.showInfoWindow();
+                return false;
+            }
+        });
+
+        setLatLngs();
+        setMarkerforSeouldata();
 
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
@@ -113,14 +201,24 @@ public class MapsFragment extends Fragment
         }
     }
 
-//    @Override
-//    public void onBackPressed() {
-//        CameraPosition cameraPosition = mMap.getCameraPosition();
-//        Log.d("asd", new Double(cameraPosition.target.latitude).toString());
-//        Log.d("asd", new Double(cameraPosition.target.longitude).toString());
-//        return;
-//    }
+    private void setCurrentPosition(double latitude, double longitude) {
+        nowPosition = new LatLng(latitude, longitude);
+//        googleMap.animateCamera(CameraUpdateFactory.newLatLng(nowPosition));
+//        googleMap.setMinZoomPreference(0.1f);
+    }
 
+    @Override
+    public void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
 
     @Override
     public boolean onMyLocationButtonClick() {
@@ -131,9 +229,6 @@ public class MapsFragment extends Fragment
     @Override
     public void onCameraIdle() {
         Log.d(TAG, "onCameraIdle");
-        CameraPosition cameraPosition = googleMap.getCameraPosition();
-        Log.d("latitude", String.valueOf(cameraPosition.target.latitude));
-        Log.d("longitude", String.valueOf(cameraPosition.target.longitude));
     }
 
     @Override
@@ -143,12 +238,39 @@ public class MapsFragment extends Fragment
 
     @Override
     public void onCameraMove() {
-        Log.d(TAG, "onCameraMove");
+        //Log.d(TAG, "onCameraMove");
     }
 
     @Override
     public void onCameraMoveStarted(int i) {
         Log.d(TAG, "onCameraMoveStarted");
     }
-}
 
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        mLocationRequest = LocationRequest.create();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(1000); // Update location every second
+        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                    mGoogleApiClient, mLocationRequest, this);
+        }
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        setCurrentPosition(location.getLatitude(), location.getLongitude());
+        //Toast.makeText(getContext(), "onLocationChanged"+location.toString(), Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+}

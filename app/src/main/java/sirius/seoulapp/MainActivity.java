@@ -15,8 +15,6 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 
-import java.util.ArrayList;
-
 public class MainActivity extends AppCompatActivity {
     private DrawerLayout mDrawerLayout;
     private FragmentManager fragmentManager;
@@ -25,7 +23,6 @@ public class MainActivity extends AppCompatActivity {
     private ParsingdataFragment parsingdataFragment;
     private final String TAG = "MainActivity";
     private LoadingPlacesFragment loadingPlacesFragment;
-    private ArrayList<Row> rowList;
 
     @Override
     protected void onPause() {
@@ -46,7 +43,6 @@ public class MainActivity extends AppCompatActivity {
         setFragments();
         InitViews();
     }
-
 
     private void setFragments(){
         fragmentManager = getSupportFragmentManager();

@@ -23,7 +23,7 @@ import retrofit2.http.Path;
  * Created by SIRIUS on 2016-09-02.
  */
 public class LoadingPlacesFragment extends Fragment {
-    private final String TAG = "LoadingPlaces";
+    private final String TAG = "LoadingPlacesFragment";
     private MapsFragment mapsFragment;
 
     private ArrayList<Row> rowList;

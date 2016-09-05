@@ -13,10 +13,10 @@ public class Row implements Serializable{
     @Expose
     private String MAIN_KEY;
 
-    @SerializedName("NM_DP")
+    @SerializedName("NAME_KOR")
     @Expose
-    private String NM_DP;
-    public String getNM_DP(){ return NM_DP; }
+    private String NAME_KOR;
+    public String getNAME_KOR(){ return NAME_KOR; }
 
     @SerializedName("WGS84_X")
     @Expose
@@ -28,6 +28,6 @@ public class Row implements Serializable{
     private String WGS84_Y;
     public String getWGS84_Y(){ return WGS84_Y; }
 
-    public String toString(){ return MAIN_KEY + "," + NM_DP + "," + WGS84_X + "," + WGS84_Y; }
+    public String toString(){ return MAIN_KEY + "," + NAME_KOR + "," + WGS84_X + "," + WGS84_Y; }
 
 }
