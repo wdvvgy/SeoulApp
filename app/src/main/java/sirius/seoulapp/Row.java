@@ -28,6 +28,16 @@ public class Row implements Serializable{
     private String WGS84_Y;
     public String getWGS84_Y(){ return WGS84_Y; }
 
+    @SerializedName("LAW_SGG")
+    @Expose
+    private String LAW_SSG;
+    public String getLAW_SSG(){ return LAW_SSG; }
+
+    @SerializedName("LAW_HEMD")
+    @Expose
+    private String LAW_HEMD;
+    public String getLLAW_HEMD(){ return LAW_HEMD; }
+
     public String toString(){ return MAIN_KEY + "," + NAME_KOR + "," + WGS84_X + "," + WGS84_Y; }
 
 }

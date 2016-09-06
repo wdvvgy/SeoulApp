@@ -11,7 +11,6 @@ public class SebcTourStreetKor {
     @SerializedName("SebcTourStreetKor")
     @Expose
     private Sebc SebcTourStreetKor;
-
     public Sebc getSebcTourStreetKor(){ return SebcTourStreetKor; }
 
 }

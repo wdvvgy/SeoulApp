@@ -18,6 +18,7 @@ package sirius.seoulapp;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -70,10 +71,11 @@ public class MapsFragment extends Fragment
     private GoogleMap googleMap;
     private ArrayList<Row> rowList;
     private ArrayList<LatLng> latlngs;
-    private LatLng nowPosition;
+    private LatLng currentPosition;
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
     private Button addBtn;
+    private Button calBtn;
 
     private void setLatLngs() {
         Log.d(TAG, "setLatLngs");
@@ -95,7 +97,7 @@ public class MapsFragment extends Fragment
         }
     }
 
-    private void setMarker(LatLng tempLatLng, String title, String snippet){
+    private void setMarker(LatLng tempLatLng, String title, String snippet) {
         MarkerOptions marker = new MarkerOptions();
         marker.position(tempLatLng);
         marker.title(title);
@@ -108,9 +110,9 @@ public class MapsFragment extends Fragment
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView");
         View v = inflater.inflate(R.layout.maps_fragment, container, false);
-        final LinearLayout linear = (LinearLayout)View.inflate(getContext(), R.layout.markeradd, null);
-        final EditText editTitle = (EditText)linear.findViewById(R.id.title);
-        final EditText editSnippet = (EditText)linear.findViewById(R.id.snippet);
+        final LinearLayout linear = (LinearLayout) View.inflate(getContext(), R.layout.markeradd, null);
+        final EditText editTitle = (EditText) linear.findViewById(R.id.title);
+        final EditText editSnippet = (EditText) linear.findViewById(R.id.snippet);
         AlertDialog.Builder alert = new AlertDialog.Builder(getContext())
                 .setTitle("Marker 추가하기")
                 .setIcon(R.drawable.ic_place_black_24dp)
@@ -120,14 +122,14 @@ public class MapsFragment extends Fragment
                     public void onClick(DialogInterface dialogInterface, int i) {
                         String title = editTitle.getText().toString();
                         String snippet = editSnippet.getText().toString();
-                        if(TextUtils.isEmpty(title) || TextUtils.isEmpty(snippet)){
-                            Toast.makeText(getContext(), "Cannot be Empty!",Toast.LENGTH_LONG).show();
+                        if (TextUtils.isEmpty(title) || TextUtils.isEmpty(snippet)) {
+                            Toast.makeText(getContext(), "Cannot be Empty!", Toast.LENGTH_LONG).show();
                             editTitle.setText("");
                             editSnippet.setText("");
                             dialogInterface.dismiss();
                             return;
                         }
-                        setMarker(nowPosition, editTitle.getText().toString(), editSnippet.getText().toString());
+                        setMarker(currentPosition, editTitle.getText().toString(), editSnippet.getText().toString());
                         dialogInterface.dismiss();
                     }
                 })
@@ -140,13 +142,26 @@ public class MapsFragment extends Fragment
                     }
                 });
         final AlertDialog alertDialog = alert.create();
-        addBtn = (Button)v.findViewById(R.id.addbtn);
-        addBtn.setOnClickListener(new Button.OnClickListener(){
+        addBtn = (Button) v.findViewById(R.id.addbtn);
+        addBtn.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
                 alertDialog.show();
             }
         });
+
+        calBtn = (Button) v.findViewById(R.id.calbtn);
+        calBtn.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.d(TAG, String.valueOf(currentPosition.latitude) + "," + String.valueOf(currentPosition.longitude));
+                Intent intent = new Intent(getContext(), CalculatePositionService.class);
+                intent.putExtra("rowList", rowList);
+                intent.putExtra("currentPosition", currentPosition);
+                getContext().startService(intent);
+            }
+        });
+
 
         Bundle bundle = getArguments();
         rowList = (ArrayList<Row>) bundle.getSerializable("rowList");
@@ -182,10 +197,10 @@ public class MapsFragment extends Fragment
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.setMinZoomPreference(5);
         googleMap.setMaxZoomPreference(15);
-        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener(){
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                if(marker.isInfoWindowShown())
+                if (marker.isInfoWindowShown())
                     marker.hideInfoWindow();
                 else marker.showInfoWindow();
                 return false;
@@ -202,9 +217,8 @@ public class MapsFragment extends Fragment
     }
 
     private void setCurrentPosition(double latitude, double longitude) {
-        nowPosition = new LatLng(latitude, longitude);
-//        googleMap.animateCamera(CameraUpdateFactory.newLatLng(nowPosition));
-//        googleMap.setMinZoomPreference(0.1f);
+        Log.d(TAG, "setCurrentPosition");
+        currentPosition = new LatLng(latitude, longitude);
     }
 
     @Override

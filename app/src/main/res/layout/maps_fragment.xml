@@ -16,4 +16,13 @@
         android:id="@+id/addbtn"
         android:alpha="145"/>
 
+    <Button
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/ic_add_circle_white_24dp"
+        android:id="@+id/calbtn"
+        android:alpha="145"
+        android:layout_gravity="center_horizontal|top" />
 </FrameLayout>
