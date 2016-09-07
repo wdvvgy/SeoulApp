@@ -52,6 +52,7 @@ public class LoadingPlacesFragment extends Fragment {
                 mapsFragment.setArguments(bundle);
                 getFragmentManager().beginTransaction().replace(R.id.fragment_container, mapsFragment).commit();
             }
+
             @Override
             public void onFailure(Call<SebcTourStreetKor> call, Throwable t) {
                 Log.d(TAG, t.getMessage());

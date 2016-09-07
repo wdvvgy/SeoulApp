@@ -23,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private ParsingdataFragment parsingdataFragment;
     private final String TAG = "MainActivity";
     private LoadingPlacesFragment loadingPlacesFragment;
+    public static final String mBroadcastStringAction = "sirius.seoulapp.broadcast.isdetected";
 
     @Override
     protected void onPause() {
@@ -33,8 +34,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
     }
-
-
+    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");

@@ -26,28 +26,4 @@ public class res {
         return formatted_address;
     }
 
-
-//    @SerializedName("geometry")
-//    @Expose
-//    private Geometry geometry;
-//
-//    public Geometry getGeometry() {
-//        return geometry;
-//    }
-//
-//    @SerializedName("place_id")
-//    @Expose
-//    private String place_id;
-//
-//    public String getPlace_id() {
-//        return place_id;
-//    }
-//
-//    @SerializedName("types")
-//    @Expose
-//    private Types types;
-//
-//    public Types getTypes() {
-//        return types;
-//    }
 }

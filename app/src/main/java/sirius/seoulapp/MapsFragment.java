@@ -17,6 +17,8 @@
 package sirius.seoulapp;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -43,6 +45,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
 import com.google.android.gms.maps.MapView;
@@ -61,10 +64,7 @@ import java.util.ArrayList;
  * time. If the permission has not been granted, the Activity is finished with an error message.
  */
 public class MapsFragment extends Fragment
-        implements OnMapReadyCallback, OnMyLocationButtonClickListener, ActivityCompat.OnRequestPermissionsResultCallback, GoogleMap.OnCameraMoveStartedListener,
-        GoogleMap.OnCameraMoveListener,
-        GoogleMap.OnCameraMoveCanceledListener,
-        GoogleMap.OnCameraIdleListener, Serializable, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+        implements OnMapReadyCallback, OnMyLocationButtonClickListener, ActivityCompat.OnRequestPermissionsResultCallback, Serializable, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private final String TAG = getClass().getName();
     private MapView mapView;
@@ -76,6 +76,20 @@ public class MapsFragment extends Fragment
     private LocationRequest mLocationRequest;
     private Button addBtn;
     private Button calBtn;
+    private boolean isSearchedFirstCurrentPosition;
+
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            stopService();
+        }
+    };
+
+    private void stopService(){
+        Intent stopIntent = new Intent(getContext(),
+                CalculatePositionService.class);
+        getContext().stopService(stopIntent);
+    }
 
     private void setLatLngs() {
         Log.d(TAG, "setLatLngs");
@@ -154,6 +168,10 @@ public class MapsFragment extends Fragment
         calBtn.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (!isSearchedFirstCurrentPosition) {
+                    Toast.makeText(getContext(), "현재 위치가 아직 조회되지 않았습니다.", Toast.LENGTH_LONG).show();
+                    return;
+                }
                 Log.d(TAG, String.valueOf(currentPosition.latitude) + "," + String.valueOf(currentPosition.longitude));
                 Intent intent = new Intent(getContext(), CalculatePositionService.class);
                 intent.putExtra("rowList", rowList);
@@ -175,6 +193,12 @@ public class MapsFragment extends Fragment
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onViewCreated");
         super.onViewCreated(view, savedInstanceState);
@@ -189,10 +213,6 @@ public class MapsFragment extends Fragment
         Log.d(TAG, "onMapReady");
         googleMap = map;
         googleMap.setOnMyLocationButtonClickListener(this);
-        googleMap.setOnCameraIdleListener(this);
-        googleMap.setOnCameraMoveStartedListener(this);
-        googleMap.setOnCameraMoveListener(this);
-        googleMap.setOnCameraMoveCanceledListener(this);
         googleMap.getUiSettings().setRotateGesturesEnabled(false);
         googleMap.getUiSettings().setZoomControlsEnabled(true);
         googleMap.setMinZoomPreference(5);
@@ -219,13 +239,24 @@ public class MapsFragment extends Fragment
     private void setCurrentPosition(double latitude, double longitude) {
         Log.d(TAG, "setCurrentPosition");
         currentPosition = new LatLng(latitude, longitude);
+        if (!isSearchedFirstCurrentPosition) {
+            isSearchedFirstCurrentPosition = true;
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, 15));
+        }
+    }
+
+    @Override
+    public void onPause() {
+        isSearchedFirstCurrentPosition = false;
+        super.onPause();
+        getContext().unregisterReceiver(mReceiver);
     }
 
     @Override
     public void onStop() {
         mGoogleApiClient.disconnect();
+        isSearchedFirstCurrentPosition = false;
         super.onStop();
-
     }
 
     @Override
@@ -238,26 +269,6 @@ public class MapsFragment extends Fragment
     public boolean onMyLocationButtonClick() {
         Log.d(TAG, "onMyLocationButtonClick");
         return false;
-    }
-
-    @Override
-    public void onCameraIdle() {
-        Log.d(TAG, "onCameraIdle");
-    }
-
-    @Override
-    public void onCameraMoveCanceled() {
-        Log.d(TAG, "onCameraMoveCanceled");
-    }
-
-    @Override
-    public void onCameraMove() {
-        //Log.d(TAG, "onCameraMove");
-    }
-
-    @Override
-    public void onCameraMoveStarted(int i) {
-        Log.d(TAG, "onCameraMoveStarted");
     }
 
     @Override
