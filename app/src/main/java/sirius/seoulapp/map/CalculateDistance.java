@@ -1,14 +1,16 @@
-package sirius.seoulapp;
+package sirius.seoulapp.map;
 
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
 
+import sirius.seoulapp.seouldata.Row;
+
 /**
  * Created by SIRIUS on 2016-09-07.
  */
 public class CalculateDistance {
-
+    private final String TAG = getClass().getName();
     private static CalculateDistance instance = null;
     public synchronized static CalculateDistance getInstance(){
         if(instance == null){
@@ -20,11 +22,9 @@ public class CalculateDistance {
 
     private ArrayList<Row> rowList;
     public void setRowList(ArrayList<Row> rowList){ this.rowList = rowList; }
-    public ArrayList<Row> getRowList(){ return rowList; }
 
     private LatLng currentPosition;
     public void setCurrentPosition(LatLng currentPosition){ this.currentPosition = currentPosition; }
-    public LatLng getCurrentPosition(){ return currentPosition; }
 
     private ArrayList<Double> calculatedDistances;
     public ArrayList<Double> getCalculatedDistances(){ return calculatedDistances; }

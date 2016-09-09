@@ -1,4 +1,4 @@
-package sirius.seoulapp;
+package sirius.seoulapp.seouldata;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

@@ -19,7 +19,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".CalculatePositionService"/>
+        <service android:name=".map.CalculatePositionService"></service>
+        <service android:name=".map.LocationService"></service>
+        <receiver android:name=".map.AutoSearchingReceiver"></receiver>
+        <receiver android:name=".map.MapsFragment$LocationReceiver"></receiver>
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").

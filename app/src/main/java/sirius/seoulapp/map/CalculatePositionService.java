@@ -1,9 +1,11 @@
-package sirius.seoulapp;
+package sirius.seoulapp.map;
 
-import android.app.IntentService;
+import android.app.Service;
 import android.content.Intent;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,11 +20,13 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
+import sirius.seoulapp.seouldata.Results;
+import sirius.seoulapp.seouldata.Row;
 
 /**
  * Created by SIRIUS on 2016-09-06.
  */
-public class CalculatePositionService extends IntentService {
+public class CalculatePositionService extends Service {
 
     private final String TAG = getClass().getName();
     private ArrayList<Row> rowList;
@@ -34,21 +38,25 @@ public class CalculatePositionService extends IntentService {
     private boolean isSearchedGu;
     private boolean isSearchedDong;
     private CalculateDistance calculateDistance;
-    public CalculatePositionService() {
-        super("CalculatePositionService");
+    private MapsFragment mapsFragment;
+
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(TAG, "onHandleIntent");
+    public int onStartCommand(Intent intent, int flags, int startId) {
 
         if (intent != null) {
+            mapsFragment = (MapsFragment) intent.getSerializableExtra("mapsFragment");
             rowList = (ArrayList<Row>) intent.getSerializableExtra("rowList");
-            currentPosition = intent.getParcelableExtra("currentPosition");
+            currentPosition = (LatLng) intent.getParcelableExtra("currentPosition");
         }
         if (rowList == null || currentPosition == null) {
             Log.d(TAG, "rowList or currentPosition is null");
-            return;
+            return START_STICKY;
         }
         calculateDistance = CalculateDistance.getInstance();
         calculateDistance.setCurrentPosition(currentPosition);
@@ -89,37 +97,38 @@ public class CalculatePositionService extends IntentService {
                 Log.d(TAG, t.getMessage());
             }
         });
+        return START_STICKY;
     }
 
-    private void sendMessageToHandler(Message message, int what, Object obj){
+    private void getNearbyMarkerbyGu() {
+        nearByMarker = new ArrayList<Row>();
+        for (int i = 0; i < rowList.size(); i++) {
+            Row row = rowList.get(i);
+            if (row.getLAW_SSG().equals(currentGu)) {
+                nearByMarker.add(row);
+            }
+        }
+        calculateDistance.setRowList(nearByMarker);
+    }
+
+    private void getNearbyMarkerbyDong() {
+        nearByMarker = new ArrayList<Row>();
+        for (int i = 0; i < rowList.size(); i++) {
+            Row row = rowList.get(i);
+            if (row.getLLAW_HEMD().equals(currentDong)) {
+                nearByMarker.add(row);
+            }
+        }
+        calculateDistance.setRowList(nearByMarker);
+    }
+
+    private void sendMessageToHandler(Message message, int what, Object obj) {
         message.what = what;
         message.obj = (String) obj;
         mHandler.sendMessage(message);
     }
 
-    private void getNearbyMarkerbyGu(){
-        nearByMarker = new ArrayList<Row>();
-        for(int i=0; i<rowList.size(); i++){
-            Row row = rowList.get(i);
-            if(row.getLAW_SSG().equals(currentGu)){
-                nearByMarker.add(row);
-            }
-        }
-        calculateDistance.setRowList(nearByMarker);
-    }
-
-    private void getNearbyMarkerbyDong(){
-        nearByMarker = new ArrayList<Row>();
-        for(int i=0; i<rowList.size(); i++){
-            Row row = rowList.get(i);
-            if(row.getLLAW_HEMD().equals(currentDong)){
-                nearByMarker.add(row);
-            }
-        }
-        calculateDistance.setRowList(nearByMarker);
-    }
-
-    Handler mHandler = new Handler() {
+    private Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 0:
@@ -140,13 +149,19 @@ public class CalculatePositionService extends IntentService {
                     break;
             }
 
-            if(calculateDistance.getisCalculatedDistance()){
-                for(int i=0; i<calculateDistance.getCalculatedDistances().size(); i++){
-                    Log.d("distances", String.valueOf(calculateDistance.getCalculatedDistances().get(i)));
+            if (calculateDistance.getisCalculatedDistance()) {
+                ArrayList<Row> insideMarker = new ArrayList<Row>();
+                for (int i = 0; i < calculateDistance.getCalculatedDistances().size(); i++) {
+                    double meter = calculateDistance.getCalculatedDistances().get(i);
+                    Log.d("distances", String.valueOf(meter));
+                    if (meter <= 5000)
+                        insideMarker.add(nearByMarker.get(i));
+
                 }
                 Intent broadcastIntent = new Intent();
-                broadcastIntent.setAction(MainActivity.mBroadcastStringAction);
+                broadcastIntent.setAction(AutoSearchingReceiver.mBroadcastStringAction);
                 broadcastIntent.putExtra("detect", calculateDistance.getCalculatedDistances());
+                broadcastIntent.putExtra("insideMarker", insideMarker);
                 sendBroadcast(broadcastIntent);
             }
         }
@@ -165,4 +180,5 @@ public class CalculatePositionService extends IntentService {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
+
 }

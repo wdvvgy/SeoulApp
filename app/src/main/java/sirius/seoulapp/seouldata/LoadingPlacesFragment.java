@@ -1,4 +1,4 @@
-package sirius.seoulapp;
+package sirius.seoulapp.seouldata;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -18,6 +18,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+import sirius.seoulapp.R;
+import sirius.seoulapp.map.MapsFragment;
 
 /**
  * Created by SIRIUS on 2016-09-02.
@@ -25,14 +27,7 @@ import retrofit2.http.Path;
 public class LoadingPlacesFragment extends Fragment {
     private final String TAG = "LoadingPlacesFragment";
     private MapsFragment mapsFragment;
-
     private ArrayList<Row> rowList;
-
-    @Override
-    public void onResume() {
-        Log.d(TAG, "onResume");
-        super.onResume();
-    }
 
     @Override
     public void onAttach(Context context) {
@@ -61,12 +56,9 @@ public class LoadingPlacesFragment extends Fragment {
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        Log.d(TAG, "onViewCreated");
-        super.onViewCreated(view, savedInstanceState);
-        Bundle bundle = new Bundle();
-        bundle = getArguments();
-        mapsFragment = (MapsFragment) bundle.getSerializable("mapsFragment");
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate");
     }
 
     @Nullable
@@ -78,9 +70,18 @@ public class LoadingPlacesFragment extends Fragment {
     }
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onViewCreated");
+        super.onViewCreated(view, savedInstanceState);
+        Bundle bundle = new Bundle();
+        bundle = getArguments();
+        mapsFragment = (MapsFragment) bundle.getSerializable("mapsFragment");
+    }
+
+    @Override
+    public void onResume() {
+        Log.d(TAG, "onResume");
+        super.onResume();
     }
 
     interface RequestInterface {

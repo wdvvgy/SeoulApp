@@ -1,4 +1,4 @@
-package sirius.seoulapp;
+package sirius.seoulapp.seouldata;
 
 import java.io.Serializable;
 import java.util.ArrayList;

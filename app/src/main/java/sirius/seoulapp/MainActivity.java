@@ -1,11 +1,14 @@
 package sirius.seoulapp;
 
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -15,26 +18,22 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MenuItem;
 
+import sirius.seoulapp.map.AutoSearchingReceiver;
+import sirius.seoulapp.map.MapsFragment;
+import sirius.seoulapp.seouldata.LoadingPlacesFragment;
+
 public class MainActivity extends AppCompatActivity {
+
     private DrawerLayout mDrawerLayout;
     private FragmentManager fragmentManager;
     private FragmentTransaction fragmentTransaction;
     private MapsFragment mapsFragment;
     private ParsingdataFragment parsingdataFragment;
-    private final String TAG = "MainActivity";
+    private final String TAG = getClass().getName();
     private LoadingPlacesFragment loadingPlacesFragment;
-    public static final String mBroadcastStringAction = "sirius.seoulapp.broadcast.isdetected";
+    private IntentFilter intentFilter;
+    private AutoSearchingReceiver autoSearchingReceiver;
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
-    
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(TAG, "onCreate");
@@ -42,6 +41,74 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         setFragments();
         InitViews();
+        autoSearchingReceiver = new AutoSearchingReceiver();
+        intentFilter = new IntentFilter();
+        intentFilter.addAction(AutoSearchingReceiver.mBroadcastStringAction);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceiver(autoSearchingReceiver, intentFilter);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(autoSearchingReceiver);
+    }
+
+    private void InitViews() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.fragment_container, loadingPlacesFragment);
+        fragmentTransaction.commit();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
+
+        ActionBar supportActionBar = getSupportActionBar();
+        if (supportActionBar != null) {
+            supportActionBar.setDisplayHomeAsUpEnabled(true);
+            supportActionBar.setHomeButtonEnabled(true);
+            Drawable menu = ContextCompat.getDrawable(getApplicationContext(),R.drawable.ic_dehaze_white_24dp);
+            supportActionBar.setHomeAsUpIndicator(menu);
+        }
+        navigationView.setNavigationItemSelectedListener(
+                new NavigationView.OnNavigationItemSelectedListener() {
+                    // This method will trigger on item Click of navigation menu
+                    @Override
+                    public boolean onNavigationItemSelected(MenuItem menuItem) {
+                        if (menuItem.getItemId() == R.id.mapmarker) {
+                            replaceFragment(R.id.fragment_container, mapsFragment, parsingdataFragment);
+
+                        } else if(menuItem.getItemId() == R.id.seelist){
+                            replaceFragment(R.id.fragment_container, parsingdataFragment, mapsFragment);
+                        } else if(menuItem.getItemId() == R.id.autosearch){
+                            if(!mapsFragment.getisRunningAutoSearch()){
+                                mapsFragment.startAutoSearch();
+                                menuItem.setTitle("관광지 자동검색 OFF");
+                                menuItem.setChecked(true);
+                            }
+                            else{
+                                mapsFragment.stopAutoSearch();
+                                menuItem.setTitle("관광지 자동검색 ON");
+                                menuItem.setChecked(false);
+                            }
+                        }
+                        mDrawerLayout.closeDrawers();
+                        return true;
+                    }
+                });
+        navigationView.getMenu().getItem(1).setChecked(true);
+
     }
 
     private void setFragments(){
@@ -55,95 +122,20 @@ public class MainActivity extends AppCompatActivity {
         loadingPlacesFragment.setArguments(bundle);
     }
 
-    private void InitViews() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        replaceFragment(R.id.fragment_container, loadingPlacesFragment);
-
-//        ViewPager viewPager = (ViewPager) findViewById(R.id.viewpager);
-//        setupViewPager(viewPager);
-        // Set Tabs inside Toolbar
-//        TabLayout tabs = (TabLayout) findViewById(R.id.tabs);
-//        tabs.setupWithViewPager(viewPager);
-
-
-        // Create Navigation drawer and inlfate layout
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
-        // Adding menu icon to Toolbar
-        ActionBar supportActionBar = getSupportActionBar();
-        if (supportActionBar != null) {
-//            VectorDrawableCompat indicator
-//                    = VectorDrawableCompat.create(getResources(), R.drawable.ic_menu, getTheme());
-//            indicator.setTint(ResourcesCompat.getColor(getResources(), R.color.white, getTheme()));
-            supportActionBar.setDisplayHomeAsUpEnabled(true);
-            supportActionBar.setHomeButtonEnabled(true);
-        }
-        // Set behavior of Navigation drawer
-        navigationView.setNavigationItemSelectedListener(
-                new NavigationView.OnNavigationItemSelectedListener() {
-                    // This method will trigger on item Click of navigation menu
-                    @Override
-                    public boolean onNavigationItemSelected(MenuItem menuItem) {
-                        Log.d(TAG, "onNavigationItemSelected");
-                        if (menuItem.getItemId() == R.id.mapmarker) {
-                            Log.d(TAG, "mapmarker");
-                            replaceFragment(R.id.fragment_container, mapsFragment);
-                        } else {
-                            Log.d(TAG, "parsingdataFragment");
-                            replaceFragment(R.id.fragment_container, parsingdataFragment);
-                        }
-                        mDrawerLayout.closeDrawers();
-                        return true;
-                    }
-                });
-        navigationView.getMenu().getItem(0).setChecked(true);
-    }
-
-    private void replaceFragment(int containerId, Fragment fragment) {
+    private void replaceFragment(int containerId, Fragment fragment, Fragment oldfragment) {
         fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.replace(containerId, fragment);
+        if(fragment.isAdded()){
+            fragmentTransaction.hide(oldfragment);
+            fragmentTransaction.show(fragment);
+
+        }
+        else{
+            fragmentTransaction.add(containerId, fragment);
+            fragmentTransaction.show(fragment);
+            fragmentTransaction.hide(oldfragment);
+        }
         fragmentTransaction.commit();
     }
-
-//    // Add Fragments to Tabs
-//    private void setupViewPager(ViewPager viewPager) {
-//        Adapter adapter = new Adapter(getSupportFragmentManager());
-//        adapter.addFragment(new MapsFragment(), "지도보기");
-//        adapter.addFragment(new ParsingdataFragment(), "찾기");
-////        adapter.addFragment(new CardContentFragment(), "Card");
-//        viewPager.setAdapter(adapter);
-//    }
-//
-//    static class Adapter extends FragmentPagerAdapter {
-//        private final List<Fragment> mFragmentList = new ArrayList<>();
-//        private final List<String> mFragmentTitleList = new ArrayList<>();
-//
-//        public Adapter(FragmentManager manager) {
-//            super(manager);
-//        }
-//
-//        @Override
-//        public Fragment getItem(int position) {
-//            return mFragmentList.get(position);
-//        }
-//
-//        @Override
-//        public int getCount() {
-//            return mFragmentList.size();
-//        }
-//
-//        public void addFragment(Fragment fragment, String title) {
-//            mFragmentList.add(fragment);
-//            mFragmentTitleList.add(title);
-//        }
-//
-//        @Override
-//        public CharSequence getPageTitle(int position) {
-//            return mFragmentTitleList.get(position);
-//        }
-//    }
 
     @Override
     public void onBackPressed() {
@@ -172,4 +164,5 @@ public class MainActivity extends AppCompatActivity {
         mDrawerLayout.openDrawer(GravityCompat.START);
         return super.onOptionsItemSelected(item);
     }
+
 }
