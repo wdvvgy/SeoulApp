@@ -32,6 +32,10 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.0.2'
     compile 'com.jakewharton:butterknife:8.4.0'
+    compile 'com.akexorcist:googledirectionlibrary:1.0.4'
+    compile 'com.afollestad.material-dialogs:core:0.9.0.1'
+    compile 'com.afollestad.material-dialogs:commons:0.9.0.1'
     apt 'com.jakewharton:butterknife-compiler:8.4.0'
+    compile project(':com.skp.Tmap_1.0.43')
 }
 

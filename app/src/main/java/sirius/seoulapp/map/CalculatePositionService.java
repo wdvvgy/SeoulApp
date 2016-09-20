@@ -104,7 +104,7 @@ public class CalculatePositionService extends Service {
         nearByMarker = new ArrayList<Row>();
         for (int i = 0; i < rowList.size(); i++) {
             Row row = rowList.get(i);
-            if (row.getLAW_SSG().equals(currentGu)) {
+            if (row.getH_KOR_GU().equals(currentGu)) {
                 nearByMarker.add(row);
             }
         }
@@ -115,7 +115,7 @@ public class CalculatePositionService extends Service {
         nearByMarker = new ArrayList<Row>();
         for (int i = 0; i < rowList.size(); i++) {
             Row row = rowList.get(i);
-            if (row.getLLAW_HEMD().equals(currentDong)) {
+            if (row.getH_KOR_DONG().equals(currentDong)) {
                 nearByMarker.add(row);
             }
         }
@@ -167,8 +167,8 @@ public class CalculatePositionService extends Service {
         }
     };
 
-    private RequestInterface request = RequestInterface.retrofit.create(RequestInterface.class);
-    private interface RequestInterface {
+    RequestInterfaceGeocode request = RequestInterfaceGeocode.retrofit.create(RequestInterfaceGeocode.class);
+    interface  RequestInterfaceGeocode{
         @GET("json")
         Call<Results> getJSON(
                 @Query("latlng") String latlng,
@@ -180,5 +180,4 @@ public class CalculatePositionService extends Service {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
-
 }

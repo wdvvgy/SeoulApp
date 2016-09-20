@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private FragmentManager fragmentManager;
     private FragmentTransaction fragmentTransaction;
     private MapsFragment mapsFragment;
-    private ParsingdataFragment parsingdataFragment;
+    private MustVisitListFragment mustVisitListFragment;
     private final String TAG = getClass().getName();
     private LoadingPlacesFragment loadingPlacesFragment;
     private IntentFilter intentFilter;
@@ -87,10 +87,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public boolean onNavigationItemSelected(MenuItem menuItem) {
                         if (menuItem.getItemId() == R.id.mapmarker) {
-                            replaceFragment(R.id.fragment_container, mapsFragment, parsingdataFragment);
+                            replaceFragment(R.id.fragment_container, mapsFragment, mustVisitListFragment);
 
                         } else if(menuItem.getItemId() == R.id.seelist){
-                            replaceFragment(R.id.fragment_container, parsingdataFragment, mapsFragment);
+                            replaceFragment(R.id.fragment_container, mustVisitListFragment, mapsFragment);
                         } else if(menuItem.getItemId() == R.id.autosearch){
                             if(!mapsFragment.getisRunningAutoSearch()){
                                 mapsFragment.startAutoSearch();
@@ -113,13 +113,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void setFragments(){
         fragmentManager = getSupportFragmentManager();
-        loadingPlacesFragment = new LoadingPlacesFragment();
         mapsFragment = new MapsFragment();
-        parsingdataFragment = new ParsingdataFragment();
-
-        Bundle bundle = new Bundle();
-        bundle.putSerializable("mapsFragment", mapsFragment);
-        loadingPlacesFragment.setArguments(bundle);
+        mustVisitListFragment = new MustVisitListFragment();
+        loadingPlacesFragment = new LoadingPlacesFragment();
+        loadingPlacesFragment.setMapsFragment(mapsFragment);
+        loadingPlacesFragment.setMustVisitListFragment(mustVisitListFragment);
     }
 
     private void replaceFragment(int containerId, Fragment fragment, Fragment oldfragment) {
@@ -127,7 +125,6 @@ public class MainActivity extends AppCompatActivity {
         if(fragment.isAdded()){
             fragmentTransaction.hide(oldfragment);
             fragmentTransaction.show(fragment);
-
         }
         else{
             fragmentTransaction.add(containerId, fragment);

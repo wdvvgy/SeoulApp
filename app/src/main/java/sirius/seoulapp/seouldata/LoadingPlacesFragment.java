@@ -18,6 +18,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
+import sirius.seoulapp.MustVisitListFragment;
 import sirius.seoulapp.R;
 import sirius.seoulapp.map.MapsFragment;
 
@@ -27,6 +28,7 @@ import sirius.seoulapp.map.MapsFragment;
 public class LoadingPlacesFragment extends Fragment {
     private final String TAG = "LoadingPlacesFragment";
     private MapsFragment mapsFragment;
+    private MustVisitListFragment mustVisitListFragment;
     private ArrayList<Row> rowList;
 
     @Override
@@ -45,6 +47,8 @@ public class LoadingPlacesFragment extends Fragment {
                 Bundle bundle = new Bundle();
                 bundle.putSerializable("rowList", rowList);
                 mapsFragment.setArguments(bundle);
+                mustVisitListFragment.setRowList(rowList);
+                mustVisitListFragment.setMapsFragment(mapsFragment);
                 getFragmentManager().beginTransaction().replace(R.id.fragment_container, mapsFragment).commit();
             }
 
@@ -75,7 +79,6 @@ public class LoadingPlacesFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         Bundle bundle = new Bundle();
         bundle = getArguments();
-        mapsFragment = (MapsFragment) bundle.getSerializable("mapsFragment");
     }
 
     @Override
@@ -99,4 +102,7 @@ public class LoadingPlacesFragment extends Fragment {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
     }
+
+    public void setMapsFragment(MapsFragment mapsFragment){ this.mapsFragment = mapsFragment; }
+    public void setMustVisitListFragment(MustVisitListFragment mustVisitListFragment){ this.mustVisitListFragment = mustVisitListFragment; }
 }

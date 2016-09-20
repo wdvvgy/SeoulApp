@@ -11,10 +11,12 @@ import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.Serializable;
+
 /**
  * Created by SIRIUS on 2016-09-08.
  */
-public class LocationService extends IntentService implements android.location.LocationListener {
+public class LocationService extends IntentService implements android.location.LocationListener, Serializable {
 
     public static final String BROADCAST_ACTION = "sirius.seoulapp.broadcast.Location";
     private final String TAG = getClass().getName();
@@ -54,7 +56,6 @@ public class LocationService extends IntentService implements android.location.L
             sendBroadcast(intent);
         }
     }
-
 
     public void onProviderDisabled(String provider) {
         //Toast.makeText( getApplicationContext(), "Gps Disabled", Toast.LENGTH_SHORT ).show();

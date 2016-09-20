@@ -28,15 +28,20 @@ public class Row implements Serializable{
     private String WGS84_Y;
     public String getWGS84_Y(){ return WGS84_Y; }
 
-    @SerializedName("LAW_SGG")
+    @SerializedName("H_KOR_CITY")
     @Expose
-    private String LAW_SSG;
-    public String getLAW_SSG(){ return LAW_SSG; }
+    private String H_KOR_CITY;
+    public String getH_KOR_CITY(){ return H_KOR_CITY; }
 
-    @SerializedName("LAW_HEMD")
+    @SerializedName("H_KOR_GU")
     @Expose
-    private String LAW_HEMD;
-    public String getLLAW_HEMD(){ return LAW_HEMD; }
+    private String H_KOR_GU;
+    public String getH_KOR_GU(){ return H_KOR_GU; }
+
+    @SerializedName("H_KOR_DONG")
+    @Expose
+    private String H_KOR_DONG;
+    public String getH_KOR_DONG(){ return H_KOR_DONG; }
 
     public String toString(){ return MAIN_KEY + "," + NAME_KOR + "," + WGS84_X + "," + WGS84_Y; }
 

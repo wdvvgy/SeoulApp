@@ -1,28 +1,32 @@
 package sirius.seoulapp.map;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
+import com.afollestad.materialdialogs.simplelist.MaterialSimpleListAdapter;
+import com.afollestad.materialdialogs.simplelist.MaterialSimpleListItem;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.OnMyLocationButtonClickListener;
@@ -32,14 +36,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
 import sirius.seoulapp.R;
 import sirius.seoulapp.seouldata.Row;
 
 public class MapsFragment extends Fragment
-        implements OnMapReadyCallback, OnMyLocationButtonClickListener, ActivityCompat.OnRequestPermissionsResultCallback, Serializable{
+        implements OnMapReadyCallback, OnMyLocationButtonClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
 
     private final String TAG = getClass().getName();
     private MapView mapView;
@@ -47,22 +50,30 @@ public class MapsFragment extends Fragment
     private ArrayList<Row> rowList;
     private ArrayList<LatLng> latlngs;
     private LatLng currentPosition;
-    private Button addBtn;
     private boolean isSearchedFirstCurrentPosition;
     private LocationReceiver locationReceiver;
     private IntentFilter intentFilter;
     private Intent AutoSearchingintent;
     private LatLng defaultPosition;
+    private transient Context mContext;
+    private MaterialDialog materialDialog;
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable("currentPosition", currentPosition);
+    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView");
+        mContext = getContext();
         View v = inflater.inflate(R.layout.maps_fragment, container, false);
-        final LinearLayout linear = (LinearLayout) View.inflate(getContext(), R.layout.markeradd, null);
+        final LinearLayout linear = (LinearLayout) View.inflate(mContext, R.layout.markeradd, null);
         final EditText editTitle = (EditText) linear.findViewById(R.id.title);
         final EditText editSnippet = (EditText) linear.findViewById(R.id.snippet);
-        AlertDialog.Builder alert = new AlertDialog.Builder(getContext())
+        final AlertDialog.Builder alert = new AlertDialog.Builder(mContext)
                 .setTitle("Marker 추가하기")
                 .setIcon(R.drawable.ic_place_black_24dp)
                 .setView(linear)
@@ -72,7 +83,7 @@ public class MapsFragment extends Fragment
                         String title = editTitle.getText().toString();
                         String snippet = editSnippet.getText().toString();
                         if (TextUtils.isEmpty(title) || TextUtils.isEmpty(snippet)) {
-                            Toast.makeText(getContext(), "Cannot be Empty!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(mContext, "Cannot be Empty!", Toast.LENGTH_LONG).show();
                             editTitle.setText("");
                             editSnippet.setText("");
                             dialogInterface.dismiss();
@@ -91,19 +102,70 @@ public class MapsFragment extends Fragment
                     }
                 });
         final AlertDialog alertDialog = alert.create();
-        addBtn = (Button) v.findViewById(R.id.addbtn);
-        addBtn.setOnClickListener(new Button.OnClickListener() {
+        final MaterialSimpleListAdapter adapter = new MaterialSimpleListAdapter(new MaterialSimpleListAdapter.Callback() {
             @Override
-            public void onClick(View view) {
-                alertDialog.show();
+            public void onMaterialListItemSelected(int index, MaterialSimpleListItem item) {
+                // TODO
+                switch(index){
+                    case 0:
+                        alertDialog.show();
+                        break;
+                    case 1:
+                        clearAllMarker();
+                        break;
+                    case 2:
+                        if(!isRunningAutoSearch)
+                            startAutoSearch();
+                        else
+                            stopAutoSearch();
+                        break;
+                    default:
+                        break;
+                }
+                materialDialog.dismiss();
+            }
+        });
+
+        adapter.add(new MaterialSimpleListItem.Builder(mContext)
+                .content("Add")
+                .icon(R.drawable.ic_add_circle_white_24dp)
+                .backgroundColor(Color.MAGENTA)
+                .build());
+        adapter.add(new MaterialSimpleListItem.Builder(mContext)
+                .content("Clear")
+                .icon(R.drawable.ic_all_out_white_24dp)
+                .backgroundColor(Color.MAGENTA)
+                .build());
+        adapter.add(new MaterialSimpleListItem.Builder(mContext)
+                .content("Auto Search")
+                .backgroundColor(Color.MAGENTA)
+                .icon(R.drawable.ic_autorenew_white_36dp)
+                .build());
+
+        materialDialog = new MaterialDialog.Builder(mContext)
+                .title("설정")
+                .adapter(adapter, null)
+                .dividerColorRes(R.color.colorAccent)
+                .build();
+
+        FloatingActionButton fab = (FloatingActionButton) v.findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                materialDialog.show();
+
             }
         });
 
         Bundle bundle = getArguments();
         rowList = (ArrayList<Row>) bundle.getSerializable("rowList");
-
+        if(savedInstanceState != null){
+            currentPosition = savedInstanceState.getParcelable("currentPosition");
+        }
         return v;
     }
+
+
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
@@ -123,7 +185,7 @@ public class MapsFragment extends Fragment
     public void onResume() {
         Log.d(TAG, "onResume");
         super.onResume();
-        getContext().registerReceiver(locationReceiver, intentFilter);
+        mContext.registerReceiver(locationReceiver, intentFilter);
     }
 
     @Override
@@ -135,7 +197,7 @@ public class MapsFragment extends Fragment
         googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(defaultPosition,12.5f));
         googleMap.setOnMyLocationButtonClickListener(this);
         googleMap.getUiSettings().setRotateGesturesEnabled(false);
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
+
         googleMap.setMinZoomPreference(5);
         googleMap.setMaxZoomPreference(15);
         googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
@@ -151,17 +213,17 @@ public class MapsFragment extends Fragment
         setLatLngs();
         setMarkerforSeouldata();
 
-        if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             googleMap.setMyLocationEnabled(true);
         }
-
         startLocationService();
     }
 
     @Override
     public void onPause() {
         Log.d(TAG, "onPause");
+        stopLocationService();
         super.onPause();
         isSearchedFirstCurrentPosition = false;
     }
@@ -172,6 +234,8 @@ public class MapsFragment extends Fragment
         super.onDestroy();
         stopAutoSearch();
     }
+
+    public GoogleMap getGoogleMap(){ return googleMap; }
 
     private void setLatLngs() {
         Log.d(TAG, "setLatLngs");
@@ -211,9 +275,21 @@ public class MapsFragment extends Fragment
         Log.d(TAG, String.valueOf(currentPosition));
     }
 
+    public LatLng getCurrentPosition(){
+        return currentPosition;
+    }
+
+    public void clearAllMarker(){
+        googleMap.clear();
+    }
+
     public void startLocationService(){
-        final Intent intent = new Intent(getContext(), LocationService.class);
-        getContext().startService(intent);
+        final Intent intent = new Intent(mContext, LocationService.class);
+        mContext.startService(intent);
+    }
+    public void stopLocationService(){
+        final Intent intent = new Intent(mContext, LocationService.class);
+        mContext.stopService(intent);
     }
 
     private boolean isRunningAutoSearch;
@@ -221,19 +297,21 @@ public class MapsFragment extends Fragment
 
     public void startAutoSearch(){
         if (!isSearchedFirstCurrentPosition) {
-            Toast.makeText(getContext(), "현재 위치가 아직 조회되지 않았습니다.", Toast.LENGTH_LONG).show();
+            Toast.makeText(mContext, "현재 위치가 아직 조회되지 않았습니다.", Toast.LENGTH_LONG).show();
             return;
         }
         isRunningAutoSearch = true;
-        AutoSearchingintent = new Intent(getContext(), CalculatePositionService.class);
+        AutoSearchingintent = new Intent(mContext, CalculatePositionService.class);
         AutoSearchingintent.putExtra("currentPosition", currentPosition);
         AutoSearchingintent.putExtra("rowList", rowList);
-        getContext().startService(AutoSearchingintent);
+        mContext.startService(AutoSearchingintent);
     }
 
     public void stopAutoSearch(){
-        isRunningAutoSearch = false;
-        getContext().stopService(AutoSearchingintent);
+        if(isRunningAutoSearch) {
+            isRunningAutoSearch = false;
+            mContext.stopService(AutoSearchingintent);
+        }
     }
 
     @Override

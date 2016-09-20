@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mapsfragment_option">
+        <item>Add</item>
+        <item>Clear</item>
+        <item>Auto Search</item>
+    </string-array>
+
+    <integer-array name="option_images">
+        <item>@drawable/ic_add_location_black_24dp</item>
+        <item>@drawable/ic_all_out_black_24dp</item>
+        <item>@drawable/ic_autorenew_white_36dp</item>
+    </integer-array>
+
+</resources>

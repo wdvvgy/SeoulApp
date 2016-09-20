@@ -10,15 +10,15 @@
             android:title="지도 보기"
             android:id="@+id/mapmarker"/>
         <item
-            android:icon="@drawable/ic_home_black_24dp"
+            android:icon="@drawable/mapmarker"
             android:title="Must Visit List"
             android:id="@+id/seelist"/>
         <item
-            android:icon="@drawable/ic_home_black_24dp"
+            android:icon="@drawable/mapmarker"
             android:title="문화"
             android:id="@+id/seeculture"/>
         <item
-            android:icon="@drawable/ic_home_black_24dp"
+            android:icon="@drawable/mapmarker"
             android:title="날씨"
             android:id="@+id/weather"/>
     </group>
